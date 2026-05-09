@@ -34,9 +34,54 @@ html,body{margin:0;height:100%;overflow:hidden;background:linear-gradient(180deg
 .tap{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-size:.8rem;letter-spacing:.28rem;text-transform:uppercase;color:rgba(255,255,255,.5)}
 .stars{position:absolute;inset:0;pointer-events:none;opacity:.18;background-image:radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,.9) 50%, transparent 52%),radial-gradient(1px 1px at 140px 90px, rgba(255,255,255,.8) 50%, transparent 52%),radial-gradient(1px 1px at 240px 170px, rgba(255,255,255,.7) 50%, transparent 52%);background-size:280px 220px}
 @media (prefers-reduced-motion: reduce){.card,.hero img,.beam,.stars{animation:none;transition:none}}
+.supernova-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+}
+.supernova-overlay.active {
+  animation: supernova-flash 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes supernova-flash {
+  0% { opacity: 0; background: #fff; }
+  12% { opacity: 1; background: #fff; }
+  40% { opacity: 1; background: #000; }
+  60% { opacity: 1; background: #000; }
+  100% { opacity: 0; background: #000; }
+}
+.music-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  background: rgba(4,18,23,.6);
+  border: 1px solid rgba(95,255,226,.2);
+  color: #c9fff4;
+  font-family: 'Cinzel', serif;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+  transition: opacity 1s ease, background 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+.music-btn.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.music-btn:hover {
+  background: rgba(95,255,226,.15);
+}
 </style>
 </head>
 <body>
+<div class="supernova-overlay" id="supernova"></div>
+<button id="music-btn" class="music-btn">Pause Music</button>
 <div class="wrap" id="wrap">
   <div class="card" id="card">
     <div class="face front">
@@ -44,7 +89,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:linear-gradient(180deg
       <div class="beam"></div>
       <div class="orb"></div>
       <div class="hero">
-        <img src="merkaba.jpg" alt="Merkaba memorial art for Michael" />
+        <img src="mekaba.webp" alt="Merkaba memorial art for Michael" />
         <div class="glow-ring"></div>
       </div>
       <div class="header">
@@ -69,14 +114,61 @@ html,body{margin:0;height:100%;overflow:hidden;background:linear-gradient(180deg
       <p>
         May this Merkaba hold his presence, your love, and the holy bridge between worlds. What shines in the heart of heaven can still reach us here.
       </p>
-      <div class="signature">— Brian, with Michael</div>
+      <div class="signature">Love Brian and Michael</div>
       <div class="tap">tap to return</div>
     </div>
   </div>
 </div>
 <script>
-const card=document.getElementById('card');
-card.addEventListener('click', ()=> card.classList.toggle('flipped'));
+const card = document.getElementById('card');
+const supernova = document.getElementById('supernova');
+const audio = new Audio('mom.mp3');
+const musicBtn = document.getElementById('music-btn');
+let isAnimating = false;
+let musicStarted = false;
+let repeatTimeout;
+
+audio.addEventListener('ended', () => {
+  repeatTimeout = setTimeout(() => {
+    audio.play().catch(e => console.log('Audio playback prevented by browser:', e));
+  }, 3000);
+});
+
+musicBtn.addEventListener('click', (e) => {
+  e.stopPropagation(); // Prevents the card behind it from flipping
+  if (audio.paused) {
+    audio.play();
+    musicBtn.textContent = 'Pause Music';
+  } else {
+    audio.pause();
+    clearTimeout(repeatTimeout); // Stops the loop if paused during the 3 second gap
+    musicBtn.textContent = 'Play Music';
+  }
+});
+
+card.addEventListener('click', () => {
+  if (isAnimating) return; // Prevent clicking while the transition is happening
+  isAnimating = true;
+
+  if (!musicStarted) {
+    audio.play().catch(e => console.log('Audio playback prevented by browser:', e));
+    musicBtn.classList.add('show');
+    musicStarted = true;
+  }
+
+  supernova.classList.add('active');
+
+  setTimeout(() => {
+    card.style.transition = 'none'; // Temporarily disable the spin transition
+    card.classList.toggle('flipped'); // Flip the card instantly while screen is black
+  }, 1500); // Triggers exactly in the middle of the pitch-black phase
+
+  setTimeout(() => {
+    card.style.transition = ''; // Restore transitions just in case
+    supernova.classList.remove('active');
+    isAnimating = false;
+  }, 3500); // Resets everything after the fade-in ends
+});
 </script>
 </body>
 </html>
